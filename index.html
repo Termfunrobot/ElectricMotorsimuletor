@@ -426,9 +426,9 @@
         <div class="flex items-center gap-4">
             
             <!-- Credit Badge -->
-            <div id="creditBadge" class="hidden items-center gap-2 bg-amber-100 px-3 py-1.5 rounded border border-amber-300 shadow-inner">
+            <div id="creditBadge" class="hidden items-center gap-2 bg-amber-100 px-3 py-1.5 rounded border border-amber-300 shadow-inner transition-all duration-300">
                 <i class="fas fa-coins text-amber-500"></i>
-                <span class="text-xs font-bold text-amber-800">เครดิต: <span id="userCreditDisplay" class="text-sm">0</span></span>
+                <span class="text-xs font-bold text-amber-800">เครดิต: <span id="userCreditDisplay" class="text-sm font-black transition-all duration-300">0</span></span>
             </div>
             <div class="h-6 w-px bg-slate-600 mx-1"></div>
 
@@ -753,6 +753,16 @@
         }
 
         // --- Credit System Logic ---
+        function animateCreditChange() {
+            const badge = document.getElementById('creditBadge');
+            badge.style.transform = 'scale(1.1)';
+            badge.style.backgroundColor = '#fecaca'; // สีแดงอ่อนเวลาโดนหัก
+            setTimeout(() => {
+                badge.style.transform = 'scale(1)';
+                badge.style.backgroundColor = ''; // กลับเป็นสีเดิม
+            }, 300);
+        }
+
         async function deductCredit(amount) {
             if (!currentUser || currentUser.isGuest) return true;
             if ((currentUser.credits || 0) < amount) return false;
@@ -762,10 +772,16 @@
             document.getElementById('userCreditDisplay').textContent = newCredit;
             localStorage.setItem('sim_user_session', JSON.stringify(currentUser));
             
+            animateCreditChange();
+            if (amount > 1) {
+                sysLog(`💳 หักเครดิต -${amount} (คงเหลือ ${newCredit})`);
+            }
+            
             try {
-                await fetch(`${FIREBASE_DB_URL}/users/${currentUser._key}.json`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ credits: newCredit }) // อัปเดตไปยังตัวแปร credits ให้ตรงกับหน้าหลัก
+                // อัปเดตไปยังตัวแปร credits ให้ตรงกับหน้าหลักแบบ Realtime (PUT เจาะจงฟิลด์)
+                await fetch(`${FIREBASE_DB_URL}/users/${currentUser._key}/credits.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(newCredit) 
                 });
                 return true;
             } catch (err) {
@@ -781,10 +797,13 @@
             document.getElementById('userCreditDisplay').textContent = amount;
             localStorage.setItem('sim_user_session', JSON.stringify(currentUser));
             
+            animateCreditChange();
+            
             try {
-                await fetch(`${FIREBASE_DB_URL}/users/${currentUser._key}.json`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ credits: amount }) // อัปเดตไปยังตัวแปร credits
+                // อัปเดตไปยังตัวแปร credits แบบเจาะจงฟิลด์
+                await fetch(`${FIREBASE_DB_URL}/users/${currentUser._key}/credits.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(amount)
                 });
             } catch (err) {
                 console.error("Credit Set Error:", err);
@@ -2778,6 +2797,17 @@
                         setTimeout(() => badge.classList.add('hidden'), 5000); // ซ่อนหลังจากผ่านไป 5 วินาที
                     }
                     lastMemberCount = memberCount;
+
+                    // 4. ซิงค์เครดิตแบบ Real-time เผื่อมีการล็อกอินซ้อนหรือใช้จากหน้าอื่น
+                    if (currentUser && !currentUser.isGuest && currentUser._key && usersData[currentUser._key]) {
+                        const remoteCredit = usersData[currentUser._key].credits;
+                        if (remoteCredit !== undefined && remoteCredit !== currentUser.credits) {
+                            currentUser.credits = remoteCredit;
+                            document.getElementById('userCreditDisplay').textContent = remoteCredit;
+                            localStorage.setItem('sim_user_session', JSON.stringify(currentUser));
+                            animateCreditChange();
+                        }
+                    }
                 }
 
             } catch (err) {
