@@ -425,10 +425,11 @@
         </div>
         <div class="flex items-center gap-4">
             
-            <!-- Admin Button -->
-            <button onclick="openAdminPanel()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white border border-purple-500 rounded transition text-sm flex items-center gap-1 shadow-md" title="การจัดการระบบ (Admin)">
-                <i class="fas fa-user-shield"></i><span class="hidden md:inline"> Admin</span>
-            </button>
+            <!-- Credit Badge -->
+            <div id="creditBadge" class="hidden items-center gap-2 bg-amber-100 px-3 py-1.5 rounded border border-amber-300 shadow-inner">
+                <i class="fas fa-coins text-amber-500"></i>
+                <span class="text-xs font-bold text-amber-800">เครดิต: <span id="userCreditDisplay" class="text-sm">0</span></span>
+            </div>
             <div class="h-6 w-px bg-slate-600 mx-1"></div>
 
             <!-- User Profile Display -->
@@ -623,49 +624,25 @@
         </div>
     </main>
 
-    <!-- Admin Panel Overlay -->
-    <div id="adminPanelOverlay" class="fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-[10000] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl flex flex-col max-h-[85vh]">
-            
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fas fa-user-shield text-purple-600"></i> แผงควบคุมผู้ดูแลระบบ (Admin)
-                </h2>
-                <button onclick="closeAdminPanel()" class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
-            </div>
-
-            <!-- PIN Login View -->
-            <div id="adminPinView" class="flex flex-col items-center justify-center py-10">
-                <p class="text-slate-600 mb-4 font-medium">กรุณาใส่รหัสผ่าน Admin เพื่อเข้าสู่ระบบ</p>
-                <input type="password" id="adminPinInput" class="w-64 px-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-purple-500 rounded-xl outline-none text-center text-xl tracking-widest font-bold" placeholder="PIN">
-                <button onclick="verifyAdminPin()" class="mt-4 px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition shadow-lg">ยืนยัน</button>
-                <p id="adminPinError" class="text-red-500 text-sm mt-3 hidden font-bold">รหัสผ่านไม่ถูกต้อง!</p>
-            </div>
-
-            <!-- Dashboard View (Hidden by default) -->
-            <div id="adminDashboardView" class="hidden flex-col flex-1 overflow-hidden">
-                <div class="flex justify-between items-center mb-3">
-                    <p class="text-sm text-slate-500 font-medium">รายชื่อผู้ใช้งานทั้งหมด</p>
-                    <button onclick="loadAdminUsers()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded border"><i class="fas fa-sync-alt"></i> รีเฟรช</button>
-                </div>
-                
-                <div class="flex-1 overflow-y-auto border rounded-xl bg-slate-50 p-2">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-200 text-slate-600">
-                            <tr>
-                                <th class="p-2 rounded-tl-lg">ชื่อผู้ใช้ / อีเมล</th>
-                                <th class="p-2 text-center">สิทธิ์ Save / Load</th>
-                                <th class="p-2 text-center rounded-tr-lg">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminUsersList" class="divide-y divide-slate-200">
-                            <!-- User rows will be injected here via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+    <!-- Stats Bar (Floating Bottom Center) -->
+    <div id="stats-bar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-[#4c4440] text-white px-5 py-2.5 rounded-full flex items-center gap-3 sm:gap-5 shadow-[0_8px_30px_rgb(0,0,0,0.5)] z-[100] text-[11px] sm:text-xs font-bold border border-[#5d5652] whitespace-nowrap tracking-wide">
+        <!-- Visitors -->
+        <div class="flex items-center gap-2">
+            <i class="fas fa-users text-[#5b9ee5] text-sm"></i>
+            <span class="text-slate-200">ผู้เข้าชมสะสม: <span id="stat-visitors" class="text-white text-[13px]">...</span></span>
+        </div>
+        <div class="w-[2px] h-3 bg-[#6b6460] rounded"></div>
+        <!-- Online -->
+        <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 bg-[#4ade80] rounded-full animate-pulse shadow-[0_0_8px_#4ade80]"></div>
+            <span class="text-slate-200">กำลังออนไลน์: <span id="stat-online" class="text-white text-[13px]">...</span></span>
+        </div>
+        <div class="w-[2px] h-3 bg-[#6b6460] rounded"></div>
+        <!-- Members -->
+        <div class="flex items-center gap-2">
+            <i class="fas fa-user-graduate text-[#c084fc] text-sm"></i>
+            <span class="text-slate-200">สมาชิก: <span id="stat-members" class="text-white text-[13px]">...</span></span>
+            <span id="stat-new-member" class="bg-[#8b315b] text-[#fbcfe8] text-[9px] px-1.5 py-0.5 rounded-sm ml-1 hidden transition-all duration-300">+1 ใหม่</span>
         </div>
     </div>
 
@@ -706,6 +683,9 @@
                 } else if (user.password !== password) {
                     showLoginMsg("รหัสผ่านไม่ถูกต้อง");
                 } else {
+                    user._key = safeKey;
+                    // ใช้ชื่อตัวแปร credits ให้ตรงกับระบบ KidLearning
+                    if (typeof user.credits === 'undefined') user.credits = 100;
                     currentUser = user;
                     localStorage.setItem('sim_user_session', JSON.stringify(user));
                     initUserSession();
@@ -736,11 +716,23 @@
                 document.getElementById('userProfileBadge').classList.remove('hidden');
                 document.getElementById('userProfileBadge').classList.add('flex');
                 document.getElementById('userNameDisplay').textContent = currentUser.name;
+                
+                // Show Credit Badge if not guest
+                if (!currentUser.isGuest) {
+                    document.getElementById('creditBadge').classList.remove('hidden');
+                    document.getElementById('creditBadge').classList.add('flex');
+                    document.getElementById('userCreditDisplay').textContent = currentUser.credits || 0;
+                } else {
+                    document.getElementById('creditBadge').classList.add('hidden');
+                    document.getElementById('creditBadge').classList.remove('flex');
+                }
+
                 sysLog(`เข้าสู่ระบบในชื่อ: ${currentUser.name}`);
             } else {
                 document.getElementById('authOverlay').classList.remove('hidden');
                 document.getElementById('userProfileBadge').classList.add('hidden');
                 document.getElementById('userProfileBadge').classList.remove('flex');
+                document.getElementById('creditBadge').classList.add('hidden');
             }
         }
 
@@ -750,6 +742,7 @@
             document.getElementById('authOverlay').classList.remove('hidden');
             document.getElementById('userProfileBadge').classList.add('hidden');
             document.getElementById('userProfileBadge').classList.remove('flex');
+            document.getElementById('creditBadge').classList.add('hidden');
             document.getElementById('loginFormSim').reset();
             
             // Clear workspace on logout for privacy
@@ -757,6 +750,45 @@
             document.querySelectorAll('.draggable-item').forEach(el => el.remove());
             historyStack = [];
             sysLog("ออกจากระบบเรียบร้อยแล้ว");
+        }
+
+        // --- Credit System Logic ---
+        async function deductCredit(amount) {
+            if (!currentUser || currentUser.isGuest) return true;
+            if ((currentUser.credits || 0) < amount) return false;
+            
+            const newCredit = (currentUser.credits || 0) - amount;
+            currentUser.credits = newCredit;
+            document.getElementById('userCreditDisplay').textContent = newCredit;
+            localStorage.setItem('sim_user_session', JSON.stringify(currentUser));
+            
+            try {
+                await fetch(`${FIREBASE_DB_URL}/users/${currentUser._key}.json`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ credits: newCredit }) // อัปเดตไปยังตัวแปร credits ให้ตรงกับหน้าหลัก
+                });
+                return true;
+            } catch (err) {
+                console.error("Credit Update Error:", err);
+                return true; // ยอมให้ทำงานต่อแม้เน็ตจะหลุดชั่วคราว
+            }
+        }
+
+        async function setCredit(amount) {
+            if (!currentUser || currentUser.isGuest) return;
+            
+            currentUser.credits = amount;
+            document.getElementById('userCreditDisplay').textContent = amount;
+            localStorage.setItem('sim_user_session', JSON.stringify(currentUser));
+            
+            try {
+                await fetch(`${FIREBASE_DB_URL}/users/${currentUser._key}.json`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ credits: amount }) // อัปเดตไปยังตัวแปร credits
+                });
+            } catch (err) {
+                console.error("Credit Set Error:", err);
+            }
         }
 
         // --- State Variables ---
@@ -791,7 +823,7 @@
             const time = new Date().toLocaleTimeString('th-TH', { hour12: false });
             const div = document.createElement('div');
             // Check if error log
-            if(msg.includes("💥") || msg.includes("⚠️")) div.innerHTML = `<span class="text-blue-500">[${time}]</span> <span class="text-red-600 font-bold">${msg}</span>`;
+            if(msg.includes("💥") || msg.includes("⚠️") || msg.includes("❌")) div.innerHTML = `<span class="text-blue-500">[${time}]</span> <span class="text-red-600 font-bold">${msg}</span>`;
             else div.innerHTML = `<span class="text-blue-500">[${time}]</span> ${msg}`;
             sysLogEl.appendChild(div);
             sysLogEl.scrollTop = sysLogEl.scrollHeight;
@@ -1224,7 +1256,7 @@
             deselectElement();
 
             // Restore
-            state.components.forEach(c => spawnComponent(c.type, parseFloat(c.left), parseFloat(c.top), c));
+            state.components.forEach(c => spawnComponent(c.type, parseFloat(c.left), parseFloat(c.top), c, true)); // undo = free
             state.wires.forEach(w => {
                 const sEl = document.getElementById(w.start);
                 const eEl = document.getElementById(w.end);
@@ -1234,7 +1266,18 @@
             sysLog("Undo successful.");
         }
 
-        function spawnComponent(type, x, y, restoreData = null) {
+        function spawnComponent(type, x, y, restoreData = null, isFree = false) {
+            
+            // --- ระบบเครดิต: ตรวจสอบและหักเครดิตสำหรับการลากอุปกรณ์ ---
+            if (!restoreData && !isFree && currentUser && !currentUser.isGuest) {
+                if ((currentUser.credits || 0) < 1) {
+                    alert("เครดิตไม่พอสำหรับวางอุปกรณ์นี้ (ต้องใช้ 1 เครดิต)");
+                    sysLog("❌ เครดิตไม่พอสำหรับวางอุปกรณ์");
+                    return; // ยกเลิกการสร้างถ้าเครดิตไม่พอ
+                }
+                deductCredit(1); // หัก 1 เครดิต
+            }
+
             if (!restoreData) saveState();
             
             const el = document.createElement('div');
@@ -2249,6 +2292,13 @@
             
             sysLog(`💥 ลัดวงจร! สาเหตุ: ${reason} (เบรกเกอร์ทริปอัตโนมัติ)`);
 
+            // --- Explosion Credit Penalty ---
+            if (currentUser && !currentUser.isGuest) {
+                sysLog("💥 ปรับลดเครดิตเหลือ 5 เนื่องจากทำวงจรช็อต!");
+                setCredit(5);
+            }
+            // --------------------------------
+
             // Hide explosion after 1.5 seconds
             setTimeout(() => {
                 overlay.classList.add('hidden');
@@ -2524,7 +2574,7 @@
                 return;
             }
             if (currentUser.isGuest) {
-                alert("โหมดทดลองใช้: ไม่สามารถบันทึกไฟล์ได้ กรุณาเข้าสู่ระบบด้วยบัญชีนักเรียน");
+                alert("โหมดทดลองใช้: ไม่สามารถบันทึกไฟล์ได้ กรุณาเข้าสู่ระบบเพื่อใช้งานเต็มรูปแบบ");
                 sysLog("⚠️ โหมดทดลองใช้: ไม่สามารถบันทึกไฟล์ได้");
                 return;
             }
@@ -2533,6 +2583,15 @@
                 sysLog("❌ ไม่อนุญาตให้บันทึกไฟล์ (รอ Admin อนุมัติ)");
                 return;
             }
+
+            // --- Credit Check for Saving ---
+            if ((currentUser.credits || 0) < 50) {
+                alert("เครดิตไม่พอสำหรับการบันทึกไฟล์ (ต้องใช้ 50 เครดิต)");
+                sysLog("❌ เครดิตไม่พอสำหรับบันทึกไฟล์");
+                return;
+            }
+            deductCredit(50); // หักเครดิต 50
+            // -------------------------------
 
             const state = {
                 components: Array.from(document.querySelectorAll('.draggable-item')).map(el => ({
@@ -2585,8 +2644,8 @@
                     historyStack = []; 
                     thermalOverloadHeat = 0;
 
-                    // Restore components
-                    state.components.forEach(c => spawnComponent(c.type, parseFloat(c.left), parseFloat(c.top), c));
+                    // Restore components (โหลดมาถือว่าให้วางฟรี ไม่คิดเครดิต)
+                    state.components.forEach(c => spawnComponent(c.type, parseFloat(c.left), parseFloat(c.top), c, true));
                     
                     // Restore wires
                     state.wires.forEach(w => {
@@ -2614,7 +2673,7 @@
                 return;
             }
             if (currentUser.isGuest) {
-                alert("โหมดทดลองใช้: ไม่สามารถเปิดไฟล์ได้ กรุณาเข้าสู่ระบบด้วยบัญชีนักเรียน");
+                alert("โหมดทดลองใช้: ไม่สามารถเปิดไฟล์ได้ กรุณาเข้าสู่ระบบเพื่อใช้งานเต็มรูปแบบ");
                 sysLog("⚠️ โหมดทดลองใช้: ไม่สามารถเปิดไฟล์ได้");
                 return;
             }
@@ -2634,7 +2693,7 @@
             historyStack = [];
             thermalOverloadHeat = 0;
             sysLog("รีเซ็ตพื้นที่ทำงาน (Workspace reset)");
-            spawnComponent('mainbox', 40, 40);
+            spawnComponent('mainbox', 40, 40, null, true); // true = ฟรีเครดิตตอนรีเซ็ต
         });
 
         document.addEventListener('keydown', (e) => {
@@ -2647,8 +2706,93 @@
         window.onload = () => {
             initUserSession();
             sysLog("ระบบพร้อมทำงาน (System ready)");
-            spawnComponent('mainbox', 40, 40);
+            spawnComponent('mainbox', 40, 40, null, true); // true = ฟรีเครดิตตอนเปิดเว็บ
+            initVisitorCount();
+            updateStats();
         };
+
+        // --- STATS SYSTEM LOGIC (Firebase REST API) ---
+        const statSessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+        let lastMemberCount = -1;
+
+        async function initVisitorCount() {
+            try {
+                // อ่านยอดผู้เข้าชมปัจจุบัน
+                const res = await fetch(`${FIREBASE_DB_URL}/stats/visitors.json`);
+                let visitors = 0;
+                if (res.ok) {
+                    visitors = await res.json() || 0;
+                }
+                
+                // ถ้ายืนยันว่าเป็นการเปิดหน้าต่างใหม่ (ไม่มี session storage) ให้เพิ่มยอด
+                if (!sessionStorage.getItem('visited')) {
+                    visitors++;
+                    await fetch(`${FIREBASE_DB_URL}/stats/visitors.json`, {
+                        method: 'PUT',
+                        body: JSON.stringify(visitors)
+                    });
+                    sessionStorage.setItem('visited', 'true');
+                }
+                
+                document.getElementById('stat-visitors').textContent = visitors.toLocaleString();
+            } catch (err) {
+                console.error("Visitor count fetch failed", err);
+            }
+        }
+
+        async function updateStats() {
+            try {
+                const now = Date.now();
+                
+                // 1. ส่งสัญญาณ (Ping) ว่ากำลังออนไลน์
+                await fetch(`${FIREBASE_DB_URL}/stats/online/${statSessionId}.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(now)
+                });
+
+                // 2. ดึงข้อมูลผู้ใช้ออนไลน์ทั้งหมด
+                const onlineRes = await fetch(`${FIREBASE_DB_URL}/stats/online.json`);
+                if (onlineRes.ok) {
+                    const onlineData = await onlineRes.json();
+                    let onlineCount = 0;
+                    if (onlineData) {
+                        const cutoff = now - 30000; // ถือว่าออฟไลน์ถ้าไม่ส่ง Ping เกิน 30 วินาที
+                        for (const key in onlineData) {
+                            if (onlineData[key] > cutoff) onlineCount++;
+                        }
+                    }
+                    document.getElementById('stat-online').textContent = onlineCount || 1;
+                }
+
+                // 3. ดึงจำนวนสมาชิกทั้งหมด
+                const usersRes = await fetch(`${FIREBASE_DB_URL}/users.json`);
+                if (usersRes.ok) {
+                    const usersData = await usersRes.json();
+                    const memberCount = usersData ? Object.keys(usersData).length : 0;
+                    document.getElementById('stat-members').textContent = memberCount.toLocaleString();
+                    
+                    // แสดงป้าย "+1 ใหม่" ถ้ามีสมาชิกเพิ่มขึ้นระหว่างที่เปิดหน้าเว็บอยู่
+                    if (lastMemberCount !== -1 && memberCount > lastMemberCount) {
+                        const badge = document.getElementById('stat-new-member');
+                        badge.classList.remove('hidden');
+                        setTimeout(() => badge.classList.add('hidden'), 5000); // ซ่อนหลังจากผ่านไป 5 วินาที
+                    }
+                    lastMemberCount = memberCount;
+                }
+
+            } catch (err) {
+                console.error("Stats update failed", err);
+            }
+        }
+
+        // อัปเดตสถิติทุกๆ 15 วินาที
+        setInterval(updateStats, 15000); 
+
+        // ลบสถานะออนไลน์ของตัวเองออกเมื่อปิดหน้าเว็บ
+        window.addEventListener('beforeunload', () => {
+            navigator.sendBeacon(`${FIREBASE_DB_URL}/stats/online/${statSessionId}.json`, JSON.stringify(null));
+        });
+
 
         // --- ADMIN SYSTEM LOGIC ---
         let isAdminAuthenticated = false;
@@ -2694,7 +2838,7 @@
 
         async function loadAdminUsers() {
             const tbody = document.getElementById('adminUsersList');
-            tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-slate-500"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-slate-500"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</td></tr>`;
             
             try {
                 const res = await fetch(`${FIREBASE_DB_URL}/users.json`);
@@ -2704,19 +2848,24 @@
                 tbody.innerHTML = '';
                 
                 if (!data) {
-                    tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-slate-500">ไม่มีข้อมูลผู้ใช้งาน</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-slate-500">ไม่มีข้อมูลผู้ใช้งาน</td></tr>`;
                     return;
                 }
 
                 Object.keys(data).forEach(key => {
                     const user = data[key];
                     const canSave = user.canSaveLoad === true;
+                    // ดึง credits มาแสดง
+                    const creditAmt = user.credits !== undefined ? user.credits : 100;
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="p-3">
                             <div class="font-bold text-slate-800">${user.name || 'ไม่ระบุชื่อ'}</div>
                             <div class="text-xs text-slate-500">${key.replace(/_/g, '.')}</div>
+                        </td>
+                        <td class="p-3 text-center font-bold text-amber-600">
+                            ${creditAmt}
                         </td>
                         <td class="p-3 text-center">
                             <span class="px-2 py-1 rounded text-xs font-bold ${canSave ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
@@ -2734,7 +2883,7 @@
                 
             } catch (err) {
                 console.error("Admin Load Error:", err);
-                tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
             }
         }
 
